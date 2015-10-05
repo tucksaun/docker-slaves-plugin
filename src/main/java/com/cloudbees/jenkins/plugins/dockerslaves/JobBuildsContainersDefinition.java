@@ -83,7 +83,9 @@ public class JobBuildsContainersDefinition extends JobProperty {
 
         @Override
         public boolean isApplicable(Class<? extends Job> jobType) {
-            return true;
+            MatrixProjectContainersDefinition.DescriptorImpl des = new MatrixProjectContainersDefinition.DescriptorImpl();
+
+            return !des.isApplicable(jobType);
         }
 
         @Override
