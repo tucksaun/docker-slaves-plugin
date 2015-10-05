@@ -1,7 +1,7 @@
 /*
  * The MIT License
  *
- *  Copyright (c) 2015, CloudBees, Inc.
+ *  Copyright (c) 2015, Blackfire.io
  *
  *  Permission is hereby granted, free of charge, to any person obtaining a copy
  *  of this software and associated documentation files (the "Software"), to deal
@@ -26,62 +26,63 @@
 package com.cloudbees.jenkins.plugins.dockerslaves;
 
 import hudson.Extension;
+import hudson.matrix.MatrixProject;
 import hudson.model.Job;
 import hudson.model.JobProperty;
 import hudson.model.JobPropertyDescriptor;
+import hudson.model.Queue;
 import net.sf.json.JSONObject;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
  * Definition for a set of containers to host the build.
- * @author <a href="mailto:nicolas.deloof@gmail.com">Nicolas De Loof</a>
+ * @author <a href="mailto:tugdual.saunier@blackfire.io">Tugdual Saunier</a>
  */
-public class JobBuildsContainersDefinition extends JobProperty {
+public class MatrixProjectContainersDefinition extends JobProperty {
 
-    private final ContainerDefinition buildHostImage;
+    private final boolean forcePull;
 
-    private final List<SideContainerDefinition> sideContainers;
+    private static final String prefix = "docker:";
 
     @DataBoundConstructor
-    public JobBuildsContainersDefinition(ContainerDefinition buildHostImage, List<SideContainerDefinition> sideContainers) {
-        this.buildHostImage = buildHostImage;
-        this.sideContainers = sideContainers==null ? new ArrayList<SideContainerDefinition>() : sideContainers;
+    public MatrixProjectContainersDefinition(boolean forcePull) {
+        this.forcePull = forcePull;
     }
 
-    public ContainerDefinition getBuildHostImage() {
-        return buildHostImage;
-        // return StringUtils.isBlank(buildHostImage) ? DockerSlaves.get().getDefaultBuildContainerImageName() : buildHostImage;
+    public ImageIdContainerDefinition getBuildHostImage(Queue.Item bi) {
+        String label = bi.getAssignedLabel().toString();
+
+        if (!label.startsWith(prefix)) {
+            return null;
+        }
+
+        return new ImageIdContainerDefinition(label.substring(prefix.length()), forcePull);
     }
 
-    public List<SideContainerDefinition> getSideContainers() {
-        return sideContainers;
-    }
-
-    @Extension
+    @Extension(ordinal = 98, optional = true)
     public static class DescriptorImpl extends JobPropertyDescriptor {
 
         @Override
         public boolean isApplicable(Class<? extends Job> jobType) {
-            MatrixProjectContainersDefinition.DescriptorImpl des = new MatrixProjectContainersDefinition.DescriptorImpl();
-
-            return !des.isApplicable(jobType);
+            try {
+                return MatrixProject.class.isAssignableFrom(jobType);
+            } catch (NoClassDefFoundError e) {
+                return false;
+            }
         }
 
         @Override
         public String getDisplayName() {
-            return "Containers to host the build";
+            return "Labels as container names to host the build";
         }
 
         @Override
         public JobProperty<?> newInstance(StaplerRequest req, JSONObject formData) throws FormException {
-            if (formData.isNullObject()) return null;
-            JSONObject containersDefinition = formData.getJSONObject("containersDefinition");
+            if (formData.isNullObject())  return null;
+            JSONObject containersDefinition = formData.getJSONObject("matrixContainersDefinition");
             if (containersDefinition.isNullObject()) return null;
-            return req.bindJSON(JobBuildsContainersDefinition.class, containersDefinition);
+            return req.bindJSON(MatrixProjectContainersDefinition.class, containersDefinition);
         }
     }
 

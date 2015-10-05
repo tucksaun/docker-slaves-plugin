@@ -27,16 +27,19 @@ package com.cloudbees.jenkins.plugins.dockerslaves;
 
 import hudson.Extension;
 import hudson.model.AbstractProject;
-import hudson.model.Computer;
+import hudson.model.Action;
 import hudson.model.Descriptor;
+import hudson.model.Job;
 import hudson.model.Node;
 import hudson.model.Queue;
+import hudson.model.labels.LabelAssignmentAction;
 import hudson.model.queue.QueueListener;
 import hudson.slaves.Cloud;
 import hudson.slaves.NodeProvisioner;
 import jenkins.model.Jenkins;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.logging.Logger;
 
 /**
@@ -65,18 +68,8 @@ public class ProvisionQueueListener extends QueueListener {
 
                 // Immediately create a slave for this item
                 // Real provisioning will happen later
-
                 final Node node = new DockerSlave(job, action.getLabel().toString());
-                Computer.threadPoolForRemoting.submit(new Runnable() {
-                    @Override
-                    public void run() {
-                        try {
-                            Jenkins.getInstance().addNode(node);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                });
+                Jenkins.getInstance().addNode(node);
             } catch (IOException e) {
                 e.printStackTrace();
             } catch (Descriptor.FormException e) {
