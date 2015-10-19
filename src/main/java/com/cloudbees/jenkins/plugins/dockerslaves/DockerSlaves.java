@@ -64,6 +64,10 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
 
     private DockerServerEndpoint dockerHost;
 
+    private int containerCap = 10;
+
+    private ContainerCount containerCount = new ContainerCount();
+
     public void start() throws IOException {
         load();
     }
@@ -86,6 +90,10 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
         return StringUtils.isBlank(remotingContainerImageName) ? "jenkinsci/slave" : remotingContainerImageName;
     }
 
+    public int getContainerCap() {
+        return containerCap;
+    }
+
     public DockerServerEndpoint getDockerHost() {
         return dockerHost;
     }
@@ -102,6 +110,34 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
     @DataBoundSetter
     public void setDockerHost(DockerServerEndpoint dockerHost) {
         this.dockerHost = dockerHost;
+    }
+
+    @DataBoundSetter
+    public void setContainerCap(int containerCap) {
+        this.containerCap = containerCap;
+    }
+
+    public ContainerCount getContainerCount()
+    {
+        return containerCount;
+    }
+
+    public boolean incrementContainerCount() {
+        synchronized (containerCount) {
+            if (containerCount.get() < containerCap) {
+                containerCount.increment();
+
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void decrementContainerCount() {
+        synchronized (containerCount) {
+            containerCount.decrement();
+        }
     }
 
     public DockerLabelAssignmentAction createLabelAssignmentAction(final Queue.BuildableItem bi) {

@@ -32,6 +32,10 @@
 
     <f:property field="dockerHost"/>
 
+    <f:entry title="Container Cap" field="containerCap">
+        <f:number default="10"/>
+    </f:entry>
+
     <f:entry title="Default SCM image" field="scmContainerImageName">
       <f:textbox default="buildpack-deps:scm"/>
     </f:entry>
