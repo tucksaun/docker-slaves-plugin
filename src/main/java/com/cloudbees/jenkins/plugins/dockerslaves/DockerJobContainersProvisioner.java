@@ -155,6 +155,8 @@ public class DockerJobContainersProvisioner {
             driver.removeContainer(localLauncher, instance);
         }
 
+        DockerSlaves.get().decrementContainerCount();
+
         driver.close();
     }
 

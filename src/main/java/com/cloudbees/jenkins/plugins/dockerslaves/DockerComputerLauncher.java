@@ -40,12 +40,16 @@ import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
  * Launchs initials containers
  */
 public class DockerComputerLauncher extends ComputerLauncher {
+
+    private static final int BASE_RETRY_DELAY = 2000;
+    private static final int MAX_RETRY_DELAY = 60000;
 
     private static final Logger LOGGER = Logger.getLogger(DockerComputerLauncher.class.getName());
 
@@ -125,6 +129,19 @@ public class DockerComputerLauncher extends ComputerLauncher {
     }
 
     public void launch(final DockerComputer computer, TaskListener listener) throws IOException, InterruptedException {
+        int retryDelay = BASE_RETRY_DELAY;
+        DockerSlaves plugin = DockerSlaves.get();
+
+        while (!plugin.incrementContainerCount()) {
+            LOGGER.log(
+                    Level.INFO,
+                    "Docker capping limit reached with {0}/{1} container(s) for {2}: postponing slave launch by {3} ms.",
+                    new Object[] { plugin.getContainerCount().get(), plugin.getContainerCap(), computer, retryDelay }
+            );
+            Thread.sleep(retryDelay);
+            retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY);
+        }
+
         // we need to capture taskListener here, as it's a private field of Computer
         TeeTaskListener teeListener = computer.initTeeListener(listener);
 
