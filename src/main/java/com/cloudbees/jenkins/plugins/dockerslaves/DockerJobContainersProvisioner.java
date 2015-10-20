@@ -113,7 +113,7 @@ public class DockerJobContainersProvisioner {
                     if (driver.containerCountLock.containerCount < containerCap) {
                         driver.containerCountLock.containerCount++;
                         LOGGER.log(
-                                Level.WARNING,
+                                Level.INFO,
                                 "Docker capping limit NOT reached with {0}/{1} container(s) for {2}: launching.",
                                 new Object[]{driver.containerCountLock.containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay}
                         );
@@ -121,7 +121,7 @@ public class DockerJobContainersProvisioner {
                     }
 
                     LOGGER.log(
-                            Level.WARNING,
+                            Level.INFO,
                             "Docker capping limit reached with {0}/{1} container(s) for {2}: postponing slave launch by {3} ms.",
                             new Object[] { driver.containerCountLock.containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay }
                     );
