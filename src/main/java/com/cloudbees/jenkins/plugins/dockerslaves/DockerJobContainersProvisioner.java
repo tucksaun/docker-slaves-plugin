@@ -109,29 +109,21 @@ public class DockerJobContainersProvisioner {
             try {
                 synchronized (driver.containerCountLock) {
                     int containerCap = DockerSlaves.get().getContainerCap();
-                    int containerCount = driver.countContainers(localLauncher, "jenkins-remoting");
 
-                    if (driver.countContainers(localLauncher, "jenkins-remoting") < containerCap) {
+                    if (driver.containerCountLock.containerCount < containerCap) {
+                        driver.containerCountLock.containerCount++;
                         LOGGER.log(
                                 Level.WARNING,
                                 "Docker capping limit NOT reached with {0}/{1} container(s) for {2}: launching.",
-                                new Object[]{containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay}
+                                new Object[]{driver.containerCountLock.containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay}
                         );
-
-                        ArgumentListBuilder args = new ArgumentListBuilder()
-                                .add("start")
-                                .add("-ia", context.getRemotingContainer().getId());
-                        driver.prependArgs(args);
-                        CommandLauncher launcher = new CommandLauncher(args.toString(), driver.dockerEnv.env());
-                        launcher.launch(computer, listener);
-
-                        return;
+                        break;
                     }
 
                     LOGGER.log(
                             Level.WARNING,
                             "Docker capping limit reached with {0}/{1} container(s) for {2}: postponing slave launch by {3} ms.",
-                            new Object[] { containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay }
+                            new Object[] { driver.containerCountLock.containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay }
                     );
                 }
             } catch (Exception e) {
@@ -145,6 +137,13 @@ public class DockerJobContainersProvisioner {
                 e.printStackTrace();
             }
         }
+
+        ArgumentListBuilder args = new ArgumentListBuilder()
+                .add("start")
+                .add("-ia", context.getRemotingContainer().getId());
+        driver.prependArgs(args);
+        CommandLauncher launcher = new CommandLauncher(args.toString(), driver.dockerEnv.env());
+        launcher.launch(computer, listener);
     }
 
     public BuildContainer newBuildContainer(Launcher.ProcStarter starter, TaskListener listener) throws IOException, InterruptedException {
@@ -198,6 +197,10 @@ public class DockerJobContainersProvisioner {
         }
 
         driver.close();
+
+        synchronized (driver.containerCountLock) {
+            driver.containerCountLock.containerCount = Math.max(driver.containerCountLock.containerCount - 1, 0);
+        }
     }
 
     public class BuildContainer {
