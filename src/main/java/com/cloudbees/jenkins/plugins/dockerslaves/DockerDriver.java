@@ -55,6 +55,8 @@ public class DockerDriver implements Closeable {
 
     final KeyMaterial dockerEnv;
 
+    public static ContainerCountLock containerCountLock = new ContainerCountLock();
+
     public DockerDriver(DockerServerEndpoint dockerHost, Item context) throws IOException, InterruptedException {
         this.dockerHost = dockerHost;
         dockerEnv = dockerHost.newKeyMaterialFactory(context, Jenkins.getInstance().getChannel()).materialize();
@@ -64,6 +66,31 @@ public class DockerDriver implements Closeable {
     @Override
     public void close() throws IOException {
         dockerEnv.close();
+    }
+
+    public int countContainers(Launcher launcher, String label) throws IOException, InterruptedException
+    {
+        Logger logger = Logger.getLogger(DockerDriver.class.getName());
+        ArgumentListBuilder args = new ArgumentListBuilder()
+                .add("ps", "--quiet=true");
+
+        if (!StringUtils.isEmpty(label)) {
+            args.add("--filter", "label="+label);
+        }
+
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
+        int status = launchDockerCLI(launcher, args)
+                .stdout(out).stderr(launcher.getListener().getLogger()).join();
+
+        if (status != 0) {
+            throw new IOException("Unable to count containers");
+        }
+
+        int count = StringUtils.countMatches(out.toString(), "\n");
+
+        LOGGER.log(Level.WARNING, "Output: \"{0}\", count: {1}", new Object[]{out.toString(), count});
+
+        return count;
     }
 
     public boolean hasContainer(Launcher launcher, String id) throws IOException, InterruptedException {
@@ -93,6 +120,8 @@ public class DockerDriver implements Closeable {
 
                 // We disable container logging to sdout as we rely on this one as transport for jenkins remoting
                 .add("--log-driver=none")
+
+                .add("--label=jenkins-remoting=true")
 
                 .add("--env", "TMPDIR=/home/jenkins/.tmp")
                 .add(image)

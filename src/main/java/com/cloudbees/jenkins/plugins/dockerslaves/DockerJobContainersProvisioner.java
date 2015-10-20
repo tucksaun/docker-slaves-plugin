@@ -36,12 +36,16 @@ import hudson.util.ArgumentListBuilder;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerServerEndpoint;
 
 import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * Provision {@link ContainerInstance}s based on ${@link JobBuildsContainersDefinition} to provide a queued task
  * an executor.
  */
 public class DockerJobContainersProvisioner {
+
+    private static final int BASE_RETRY_DELAY = 2000, MAX_RETRY_DELAY = BASE_RETRY_DELAY * 30;
 
     private final JobBuildsContainersContext context;
 
@@ -56,6 +60,8 @@ public class DockerJobContainersProvisioner {
     private final String remotingImage;
     private final String scmImage;
     private String buildImage;
+
+    private static final Logger LOGGER = Logger.getLogger(DockerJobContainersProvisioner.class.getName());
 
     public DockerJobContainersProvisioner(Job job, DockerServerEndpoint dockerHost, TaskListener slaveListener, String remotingImage, String scmImage) throws IOException, InterruptedException {
         this.slaveListener = slaveListener;
@@ -97,12 +103,48 @@ public class DockerJobContainersProvisioner {
     }
 
     public void launchRemotingContainer(final SlaveComputer computer, TaskListener listener) {
-        ArgumentListBuilder args = new ArgumentListBuilder()
-                .add("start")
-                .add("-ia", context.getRemotingContainer().getId());
-        driver.prependArgs(args);
-        CommandLauncher launcher = new CommandLauncher(args.toString(), driver.dockerEnv.env());
-        launcher.launch(computer, listener);
+        int retryDelay = BASE_RETRY_DELAY;
+
+        while (true) {
+            try {
+                synchronized (driver.containerCountLock) {
+                    int containerCap = DockerSlaves.get().getContainerCap();
+                    int containerCount = driver.countContainers(localLauncher, "jenkins-remoting");
+
+                    if (driver.countContainers(localLauncher, "jenkins-remoting") < containerCap) {
+                        LOGGER.log(
+                                Level.WARNING,
+                                "Docker capping limit NOT reached with {0}/{1} container(s) for {2}: launching.",
+                                new Object[]{containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay}
+                        );
+
+                        ArgumentListBuilder args = new ArgumentListBuilder()
+                                .add("start")
+                                .add("-ia", context.getRemotingContainer().getId());
+                        driver.prependArgs(args);
+                        CommandLauncher launcher = new CommandLauncher(args.toString(), driver.dockerEnv.env());
+                        launcher.launch(computer, listener);
+
+                        return;
+                    }
+
+                    LOGGER.log(
+                            Level.WARNING,
+                            "Docker capping limit reached with {0}/{1} container(s) for {2}: postponing slave launch by {3} ms.",
+                            new Object[] { containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay }
+                    );
+                }
+            } catch (Exception e) {
+                e.printStackTrace();
+            }
+
+            retryDelay = Math.min(retryDelay * 2, MAX_RETRY_DELAY);
+            try {
+                Thread.sleep(retryDelay);
+            } catch (InterruptedException e) {
+                e.printStackTrace();
+            }
+        }
     }
 
     public BuildContainer newBuildContainer(Launcher.ProcStarter starter, TaskListener listener) throws IOException, InterruptedException {
@@ -154,8 +196,6 @@ public class DockerJobContainersProvisioner {
         for (ContainerInstance instance : context.getBuildContainers()) {
             driver.removeContainer(localLauncher, instance);
         }
-
-        DockerSlaves.get().decrementContainerCount();
 
         driver.close();
     }
