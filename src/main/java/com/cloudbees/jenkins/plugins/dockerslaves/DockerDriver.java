@@ -104,6 +104,8 @@ public class DockerDriver implements Closeable {
 
                 // set TMP directory within the /home/jenkins/ volume so it can be shared with other containers
                 .add("-Djava.io.tmpdir=/home/jenkins/.tmp")
+                .add("-Dorg.jenkinsci.plugins.gitclient.GitClient.quietRemoteBranches=true")
+                .add("-Dorg.jenkinsci.plugins.gitclient.GitClient.verbose=false")
                 .add("-jar").add("/home/jenkins/slave.jar");
 
         ByteArrayOutputStream out = new ByteArrayOutputStream();
