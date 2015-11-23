@@ -36,5 +36,5 @@ import java.io.IOException;
  */
 public abstract class ContainerDefinition extends AbstractDescribableImpl<ContainerDefinition> {
 
-    abstract String getImage(DockerDriver driver, Launcher.ProcStarter procStarter, TaskListener listener) throws IOException, InterruptedException;
+    abstract String getImage(DockerDriver driver, Launcher.ProcStarter procStarter, TaskListener listener, String placement) throws IOException, InterruptedException;
 }

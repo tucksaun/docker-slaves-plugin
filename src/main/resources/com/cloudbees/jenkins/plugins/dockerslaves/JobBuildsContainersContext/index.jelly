@@ -30,6 +30,9 @@
     <h1><l:icon src="${app.rootUrl}/plugin/docker-slaves/images/48x48/docker-logo.png"/> Containers used for this build</h1>
 
       <ul>
+        <j:if test="${!empty(it.constraint)}">
+          <li>constraint:${it.constraint}</li>
+        </j:if>
         <li>${it.remotingContainer.id} (${it.remotingContainer.imageName})</li>
         <j:forEach var="container" items="${it.buildContainers}">
           <li>${container.id} (${container.imageName})</li>

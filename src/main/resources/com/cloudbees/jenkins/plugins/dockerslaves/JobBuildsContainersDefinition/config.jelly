@@ -38,6 +38,10 @@
         </f:repeatableProperty>
       </f:entry>
 
+      <f:entry title="Placement constraint" field="constraint">
+        <f:textbox/>
+      </f:entry>
+
   </f:optionalBlock>
 
 </j:jelly>

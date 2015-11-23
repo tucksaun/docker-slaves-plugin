@@ -88,7 +88,7 @@ public class DockerDriver implements Closeable {
         }
     }
 
-    public ContainerInstance createRemotingContainer(Launcher launcher, String image) throws IOException, InterruptedException {
+    public ContainerInstance createRemotingContainer(Launcher launcher, String image, String constraint) throws IOException, InterruptedException {
 
         ArgumentListBuilder args = new ArgumentListBuilder()
                 .add("create", "--interactive")
@@ -99,6 +99,13 @@ public class DockerDriver implements Closeable {
                 .add("--label=jenkins-remoting=true")
 
                 .add("--env", "TMPDIR=/home/jenkins/.tmp")
+        ;
+
+        if (StringUtils.isNotBlank(constraint)) {
+            args.add("--env", "constraint:" + constraint);
+        }
+
+        args
                 .add(image)
                 .add("java")
 
@@ -278,7 +285,7 @@ public class DockerDriver implements Closeable {
                 .stdout(launcher.getListener().getLogger()).join() == 0;
     }
 
-    public int buildDockerfile(Launcher launcher, String dockerfilePath, String tag, boolean pull)  throws IOException, InterruptedException {
+    public int buildDockerfile(Launcher launcher, String dockerfilePath, String tag, String constraint, boolean pull)  throws IOException, InterruptedException {
         String pullOption = "--pull=";
         if (pull) {
             pullOption += "true";
@@ -289,7 +296,13 @@ public class DockerDriver implements Closeable {
                 .add("build")
                 .add(pullOption)
                 .add("-t", tag)
-                .add(dockerfilePath);
+        ;
+
+        if (StringUtils.isNotBlank(constraint)) {
+            args.add("--build-arg", "constraint:" + constraint);
+        }
+
+        args.add(dockerfilePath);
 
         return launchDockerCLI(launcher, args)
                 .stdout(launcher.getListener().getLogger()).join();

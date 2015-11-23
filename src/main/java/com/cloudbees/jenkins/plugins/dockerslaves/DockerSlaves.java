@@ -57,6 +57,8 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
 
     private String scmContainerImageName;
 
+    private String defaultConstraint;
+
     /**
      * Remoting Container image name. Jenkins Remoting will be launched in it.
      */
@@ -78,6 +80,9 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
 
     public String getDefaultBuildContainerImageName() {
         return defaultBuildContainerImageName;
+    }
+    public String getDefaultConstraint() {
+        return defaultConstraint;
     }
 
     public String getScmContainerImageName() {
@@ -105,6 +110,11 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
         this.defaultBuildContainerImageName = defaultBuildContainerImageName;
     }
 
+    @DataBoundSetter
+    public void setDefaultConstraint(String defaultConstraint) {
+        this.defaultConstraint = defaultConstraint;
+    }
+
     public void setScmContainerImageName(String scmContainerImageName) {
         this.scmContainerImageName = scmContainerImageName;
     }
@@ -126,7 +136,7 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
     }
 
     public DockerJobContainersProvisioner buildProvisioner(Job job, TaskListener slaveListener) throws IOException, InterruptedException {
-        return new DockerJobContainersProvisioner(job, getDockerHost(), slaveListener, getRemotingContainerImageName(), getScmContainerImageName());
+        return new DockerJobContainersProvisioner(job, getDockerHost(), slaveListener, getRemotingContainerImageName(), getScmContainerImageName(), getDefaultConstraint());
     }
 
     public static DockerSlaves get() {

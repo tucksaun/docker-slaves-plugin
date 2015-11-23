@@ -48,10 +48,13 @@ public class JobBuildsContainersDefinition extends JobProperty {
 
     private final List<SideContainerDefinition> sideContainers;
 
+    private final String constraint;
+
     @DataBoundConstructor
-    public JobBuildsContainersDefinition(ContainerDefinition buildHostImage, List<SideContainerDefinition> sideContainers) {
+    public JobBuildsContainersDefinition(ContainerDefinition buildHostImage, List<SideContainerDefinition> sideContainers, String constraint) {
         this.buildHostImage = buildHostImage;
         this.sideContainers = sideContainers == null ? Collections.<SideContainerDefinition>emptyList() : sideContainers;
+        this.constraint = constraint;
     }
 
     /**
@@ -66,7 +69,7 @@ public class JobBuildsContainersDefinition extends JobProperty {
      * @return a replacement JobBuildsContainersDefinition that went through the constructor
      */
     private Object readResolve() {
-        return new JobBuildsContainersDefinition(buildHostImage, sideContainers);
+        return new JobBuildsContainersDefinition(buildHostImage, sideContainers, constraint);
     }
 
     public ContainerDefinition getBuildHostImage() {
@@ -76,6 +79,10 @@ public class JobBuildsContainersDefinition extends JobProperty {
 
     public List<SideContainerDefinition> getSideContainers() {
         return sideContainers;
+    }
+
+    public String getConstraint() {
+        return constraint;
     }
 
     @Extension

@@ -33,6 +33,7 @@ import hudson.model.TaskListener;
 import hudson.slaves.CommandLauncher;
 import hudson.slaves.SlaveComputer;
 import hudson.util.ArgumentListBuilder;
+import org.apache.commons.lang.StringUtils;
 import org.jenkinsci.plugins.docker.commons.credentials.DockerServerEndpoint;
 
 import java.io.IOException;
@@ -63,7 +64,7 @@ public class DockerJobContainersProvisioner {
 
     private static final Logger LOGGER = Logger.getLogger(DockerJobContainersProvisioner.class.getName());
 
-    public DockerJobContainersProvisioner(Job job, DockerServerEndpoint dockerHost, TaskListener slaveListener, String remotingImage, String scmImage) throws IOException, InterruptedException {
+    public DockerJobContainersProvisioner(Job job, DockerServerEndpoint dockerHost, TaskListener slaveListener, String remotingImage, String scmImage, String defaultConstraint) throws IOException, InterruptedException {
         this.slaveListener = slaveListener;
         this.driver = new DockerDriver(dockerHost, job);
         localLauncher = new Launcher.LocalLauncher(slaveListener);
@@ -72,6 +73,14 @@ public class DockerJobContainersProvisioner {
         this.remotingImage = remotingImage;
         this.scmImage = scmImage;
         context = new JobBuildsContainersContext();
+
+        String constraint = spec.getConstraint();
+        if (StringUtils.isNotBlank(constraint)) {
+            context.setConstraint(constraint);
+        } else {
+            context.setConstraint(defaultConstraint);
+        }
+
 
         // TODO define a configurable volume strategy to retrieve a (maybe persistent) workspace
         // could rely on docker volume driver
@@ -98,7 +107,7 @@ public class DockerJobContainersProvisioner {
                 return;
             }
         }
-        final ContainerInstance remotingContainer = driver.createRemotingContainer(localLauncher, remotingImage);
+        final ContainerInstance remotingContainer = driver.createRemotingContainer(localLauncher, remotingImage, context.getConstraint());
         context.setRemotingContainer(remotingContainer);
     }
 
@@ -157,7 +166,7 @@ public class DockerJobContainersProvisioner {
         if (context.isPreScm()) {
             return newBuildContainer(starter, scmImage);
         } else {
-            if (buildImage == null) buildImage = spec.getBuildHostImage().getImage(driver, starter, listener);
+            if (buildImage == null) buildImage = spec.getBuildHostImage().getImage(driver, starter, listener, context.getConstraint());
             return newBuildContainer(starter, buildImage);
         }
     }
@@ -165,7 +174,7 @@ public class DockerJobContainersProvisioner {
     private void createSideContainers(Launcher.ProcStarter starter, TaskListener listener) throws IOException, InterruptedException {
         for (SideContainerDefinition definition : spec.getSideContainers()) {
             final String name = definition.getName();
-            final String image = definition.getSpec().getImage(driver, starter, listener);
+            final String image = definition.getSpec().getImage(driver, starter, listener, context.getConstraint());
             listener.getLogger().println("Starting " + name + " container");
             ContainerInstance container = new ContainerInstance(image);
             context.getSideContainers().put(name, container);
