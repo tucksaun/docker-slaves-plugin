@@ -51,8 +51,6 @@ public class DockerfileContainerDefinition extends ContainerDefinition {
 
     private final boolean forcePull;
 
-    private transient String image;
-
     @DataBoundConstructor
     public DockerfileContainerDefinition(String contextPath, String dockerfile, boolean forcePull) {
         this.contextPath = contextPath;
@@ -71,7 +69,6 @@ public class DockerfileContainerDefinition extends ContainerDefinition {
     @Override
     public String getImage(DockerDriver driver, Launcher.ProcStarter procStarter, TaskListener listener) throws IOException, InterruptedException {
         boolean pull = forcePull;
-        if (image != null) return image;
         String tag = Long.toHexString(System.nanoTime());
 
         final FilePath workspace = procStarter.pwd();
@@ -95,7 +92,7 @@ public class DockerfileContainerDefinition extends ContainerDefinition {
             throw new IOException("Failed to build image from Dockerfile "+dockerfile);
         }
         Util.deleteRecursive(context);
-        this.image = tag;
+
         return tag;
     }
 
