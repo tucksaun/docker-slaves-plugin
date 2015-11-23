@@ -32,6 +32,7 @@ import hudson.model.JobProperty;
 import hudson.model.JobPropertyDescriptor;
 import hudson.model.Queue;
 import net.sf.json.JSONObject;
+import org.apache.commons.lang.StringUtils;
 import org.kohsuke.stapler.DataBoundConstructor;
 import org.kohsuke.stapler.StaplerRequest;
 
@@ -43,7 +44,8 @@ public class MatrixProjectContainersDefinition extends JobProperty {
 
     private final boolean forcePull;
 
-    private static final String prefix = "docker:";
+    private static final String ImagePrefix = "docker:";
+    private static final String ConstraintPrefix = "constraint:";
 
     @DataBoundConstructor
     public MatrixProjectContainersDefinition(boolean forcePull) {
@@ -53,11 +55,25 @@ public class MatrixProjectContainersDefinition extends JobProperty {
     public ImageIdContainerDefinition getBuildHostImage(Queue.Item bi) {
         String label = bi.getAssignedLabel().toString();
 
-        if (!label.startsWith(prefix)) {
-            return null;
+        for(String subLabel: StringUtils.split(label, ' ')) {
+            if (subLabel.startsWith(ImagePrefix)) {
+                return new ImageIdContainerDefinition(subLabel.substring(ImagePrefix.length()), forcePull);
+            }
         }
 
-        return new ImageIdContainerDefinition(label.substring(prefix.length()), forcePull);
+        return null;
+    }
+
+    public String getConstraint(Queue.Item bi) {
+        String label = bi.getAssignedLabel().toString();
+
+        for(String subLabel: StringUtils.split(label, ' ')) {
+            if (subLabel.startsWith(ConstraintPrefix)) {
+                return subLabel.substring(ConstraintPrefix.length());
+            }
+        }
+
+        return null;
     }
 
     @Extension(ordinal = 98, optional = true)

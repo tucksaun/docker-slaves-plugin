@@ -43,6 +43,8 @@ public class JobBuildsContainersContext implements BuildBadgeAction {
 
     protected Map<String, ContainerInstance> sideContainers = new HashMap<String, ContainerInstance>();
 
+    protected String constraint;
+
     /**
      * Flag to indicate the SCM checkout build phase is running.
      */
@@ -64,12 +66,20 @@ public class JobBuildsContainersContext implements BuildBadgeAction {
         return buildContainers;
     }
 
+    public String getConstraint()  {
+        return constraint;
+    }
+
     public boolean isPreScm() {
         return preScm;
     }
 
     public void setRemotingContainer(ContainerInstance remotingContainer) {
         this.remotingContainer = remotingContainer;
+    }
+
+    public void setConstraint(String constraint)  {
+        this.constraint = constraint;
     }
 
     public Map<String, ContainerInstance> getSideContainers() {

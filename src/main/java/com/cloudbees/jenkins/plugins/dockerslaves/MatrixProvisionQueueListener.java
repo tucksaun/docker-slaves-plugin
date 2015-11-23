@@ -72,7 +72,8 @@ public class MatrixProvisionQueueListener extends QueueListener {
 
                     job.addProperty(new JobBuildsContainersDefinition(
                             imageId,
-                            null
+                            null,
+                            def.getConstraint(bi)
                     ));
                 } catch (IOException e) {
                     e.printStackTrace();

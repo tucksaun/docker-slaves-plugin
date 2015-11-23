@@ -55,7 +55,7 @@ public class ImageIdContainerDefinition extends ContainerDefinition {
     }
 
     @Override
-    public String getImage(DockerDriver driver, Launcher.ProcStarter procStarter, TaskListener listener) throws IOException, InterruptedException {
+    public String getImage(DockerDriver driver, Launcher.ProcStarter procStarter, TaskListener listener, String placement) throws IOException, InterruptedException {
 
         boolean pull = forcePull;
         final Launcher launcher = new Launcher.LocalLauncher(listener);
