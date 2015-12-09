@@ -119,7 +119,7 @@ public class DockerJobContainersProvisioner {
                 synchronized (driver.containerCountLock) {
                     int containerCap = DockerSlaves.get().getContainerCap();
 
-                    if (driver.containerCountLock.containerCount < containerCap) {
+                    if (driver.containerCountLock.containerCount <= containerCap) {
                         driver.containerCountLock.containerCount++;
                         LOGGER.log(
                                 Level.INFO,
