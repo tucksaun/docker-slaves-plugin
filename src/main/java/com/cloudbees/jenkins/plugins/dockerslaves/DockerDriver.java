@@ -60,7 +60,7 @@ public class DockerDriver implements Closeable {
     public DockerDriver(DockerServerEndpoint dockerHost, Item context) throws IOException, InterruptedException {
         this.dockerHost = dockerHost;
         dockerEnv = dockerHost.newKeyMaterialFactory(context, Jenkins.getInstance().getChannel()).materialize();
-        verbose = true;
+        verbose = false;
     }
 
     @Override
