@@ -55,8 +55,6 @@ public class DockerDriver implements Closeable {
 
     final KeyMaterial dockerEnv;
 
-    public static ContainerCountLock containerCountLock = new ContainerCountLock();
-
     public DockerDriver(DockerServerEndpoint dockerHost, Item context) throws IOException, InterruptedException {
         this.dockerHost = dockerHost;
         dockerEnv = dockerHost.newKeyMaterialFactory(context, Jenkins.getInstance().getChannel()).materialize();

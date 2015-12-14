@@ -68,8 +68,11 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
 
     private int containerCap = 10;
 
+    public transient ContainerCountLock containerCount;
+
     public void start() throws IOException {
         load();
+        containerCount = new ContainerCountLock(getContainerCap(), getDefaultConstraint());
     }
 
     @Override
@@ -113,6 +116,9 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
     @DataBoundSetter
     public void setDefaultConstraint(String defaultConstraint) {
         this.defaultConstraint = defaultConstraint;
+        synchronized (containerCount) {
+            containerCount.setDefaultConstraint(defaultConstraint);
+        }
     }
 
     public void setScmContainerImageName(String scmContainerImageName) {
@@ -127,6 +133,10 @@ public class DockerSlaves extends Plugin implements Describable<DockerSlaves> {
     @DataBoundSetter
     public void setContainerCap(int containerCap) {
         this.containerCap = containerCap;
+        synchronized (containerCount) {
+            containerCount.setContainerCap(containerCap);
+        }
+
     }
 
     public DockerLabelAssignmentAction createLabelAssignmentAction(final Queue.BuildableItem bi) {

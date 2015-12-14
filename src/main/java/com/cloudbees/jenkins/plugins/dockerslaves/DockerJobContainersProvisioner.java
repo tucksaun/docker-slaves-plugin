@@ -116,23 +116,23 @@ public class DockerJobContainersProvisioner {
 
         while (true) {
             try {
-                synchronized (driver.containerCountLock) {
-                    int containerCap = DockerSlaves.get().getContainerCap();
-
-                    if (driver.containerCountLock.containerCount <= containerCap) {
-                        driver.containerCountLock.containerCount++;
+                ContainerCountLock containerCount = DockerSlaves.get().containerCount;
+                synchronized (containerCount) {
+                    if (!containerCount.isLimitReach(context)) {
+                        containerCount.increaseCount(context);
                         LOGGER.log(
                                 Level.INFO,
                                 "Docker capping limit NOT reached with {0}/{1} container(s) for {2}: launching.",
-                                new Object[]{driver.containerCountLock.containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay}
+                                new Object[]{containerCount.getCount(context), containerCount.getLimit(context), context.getRemotingContainer().getImageName(), retryDelay}
                         );
                         break;
+
                     }
 
                     LOGGER.log(
                             Level.INFO,
                             "Docker capping limit reached with {0}/{1} container(s) for {2}: postponing slave launch by {3} ms.",
-                            new Object[] { driver.containerCountLock.containerCount, containerCap, context.getRemotingContainer().getImageName(), retryDelay }
+                            new Object[] { containerCount.getCount(context), containerCount.getLimit(context), context.getRemotingContainer().getImageName(), retryDelay }
                     );
                 }
             } catch (Exception e) {
@@ -207,8 +207,9 @@ public class DockerJobContainersProvisioner {
 
         driver.close();
 
-        synchronized (driver.containerCountLock) {
-            driver.containerCountLock.containerCount = Math.max(driver.containerCountLock.containerCount - 1, 0);
+        ContainerCountLock containerCount = DockerSlaves.get().containerCount;
+        synchronized (containerCount) {
+            containerCount.decreaseCount(context);
         }
     }
 
