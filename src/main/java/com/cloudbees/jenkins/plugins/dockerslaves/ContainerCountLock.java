@@ -37,7 +37,7 @@ public class ContainerCountLock {
             return containerCap;
         }
 
-        return 3;
+        return 2;
     }
 
     public boolean isLimitReach(JobBuildsContainersContext context)  {
