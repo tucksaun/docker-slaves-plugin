@@ -100,6 +100,11 @@
             <version>1.0</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.jenkins-ci.plugins.workflow</groupId>
+            <artifactId>workflow-step-api</artifactId>
+            <version>1.10</version>
+        </dependency>
     </dependencies>
 
     <build>
