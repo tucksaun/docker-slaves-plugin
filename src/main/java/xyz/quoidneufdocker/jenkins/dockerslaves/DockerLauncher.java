@@ -54,6 +54,10 @@ public class DockerLauncher extends Launcher.DecoratedLauncher {
         try {
             return provisioner.launchBuildProcess(starter, listener);
         } catch (InterruptedException e) {
+            try {
+                provisioner.clean();
+            } catch (InterruptedException e1) {
+            }
             throw new IOException(e);
         }
     }
